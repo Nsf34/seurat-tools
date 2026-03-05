@@ -1,0 +1,55 @@
+{
+  "name": "seurat-tools",
+  "version": "1.0.0",
+  "description": "Seurat Group consulting toolkit — meeting notes, survey test plans, and survey doc generation",
+  "author": "Seurat Group",
+  "skills": [
+    {
+      "name": "meeting-notes",
+      "path": "skills/meeting-notes",
+      "description": "Transform call transcripts into polished Seurat meeting notes (.docx)"
+    },
+    {
+      "name": "survey-mapper",
+      "path": "skills/survey-mapper",
+      "description": "Read a survey document and produce a structured Survey Map (.md)"
+    },
+    {
+      "name": "test-path-generator",
+      "path": "skills/test-path-generator",
+      "description": "Generate a single test path from a Survey Map + matrix row (.txt)"
+    },
+    {
+      "name": "test-plan-assembler",
+      "path": "skills/test-plan-assembler",
+      "description": "Assemble all test paths into a complete Survey Test Plan (.docx)"
+    },
+    {
+      "name": "survey-wireframe-to-doc",
+      "path": "skills/survey-wireframe-to-doc",
+      "description": "Convert a survey wireframe into a programmer-ready survey document (.docx)"
+    }
+  ],
+  "commands": [
+    {
+      "name": "meeting-notes",
+      "path": "commands/meeting-notes.md",
+      "description": "Clean meeting notes from a transcript"
+    },
+    {
+      "name": "survey-map",
+      "path": "commands/survey-map.md",
+      "description": "Map a survey document"
+    },
+    {
+      "name": "survey-doc",
+      "path": "commands/survey-doc.md",
+      "description": "Convert wireframe to programmer-ready survey doc"
+    },
+    {
+      "name": "test-plan",
+      "path": "commands/test-plan.md",
+      "description": "Run full survey test plan pipeline"
+    }
+  ]
+}

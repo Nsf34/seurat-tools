@@ -1,0 +1,12 @@
+{
+  "plugins": [
+    {
+      "name": "seurat-tools",
+      "description": "Seurat Group consulting toolkit — meeting notes, survey test plans, and survey doc generation. Saves 6-10 hours per survey test plan and 45-60 minutes per meeting.",
+      "version": "1.0.0",
+      "author": "Seurat Group",
+      "tags": ["consulting", "cpg", "meeting-notes", "survey", "test-plan"],
+      "install": "seurat-tools"
+    }
+  ]
+}
