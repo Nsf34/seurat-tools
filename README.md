@@ -16,7 +16,7 @@ Seurat Group's consulting toolkit for Claude. Automates meeting notes, survey te
 
 ```
 /plugin marketplace add Nsf34/seurat-tools
-/plugin install seurat-tools
+/plugin install seurat-tools@seurat-tools-marketplace
 ```
 
 ## Usage
