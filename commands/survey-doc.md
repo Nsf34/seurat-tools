@@ -1,3 +1,7 @@
+---
+description: Convert a survey wireframe to a programmer-ready survey document
+---
+
 Convert a survey wireframe to a programmer-ready survey document using the seurat-tools survey-wireframe-to-doc skill.
 
 ## Instructions

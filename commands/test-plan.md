@@ -1,3 +1,7 @@
+---
+description: Run the full survey test plan pipeline
+---
+
 Run the full survey test plan pipeline using seurat-tools skills.
 
 ## Instructions

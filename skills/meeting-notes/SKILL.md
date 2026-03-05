@@ -1,5 +1,12 @@
-| name | description |
-| seurat-meeting-notes | Transform meeting transcripts into polished Seurat Group meeting notes documents. Use when asked to create meeting notes, process call transcripts, or generate notes from a meeting. Inputs include transcript, presentation deck content, and personal jotted notes. Outputs a properly formatted .docx with Next Steps, Key Takeaways, and Full Notes sections following Seurat Group standards. |
+---
+name: seurat-meeting-notes
+description: >
+  Transform meeting transcripts into polished Seurat Group meeting notes documents.
+  Use when asked to create meeting notes, process call transcripts, or generate notes
+  from a meeting. Inputs include transcript, presentation deck content, and personal
+  jotted notes. Outputs a properly formatted .docx with Next Steps, Key Takeaways,
+  and Full Notes sections following Seurat Group standards.
+---
 
 # Seurat Meeting Notes
 

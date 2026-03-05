@@ -1,3 +1,7 @@
+---
+description: Generate polished Seurat meeting notes from a transcript
+---
+
 Clean meeting notes using the seurat-tools meeting-notes skill.
 
 ## Instructions

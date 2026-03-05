@@ -1,3 +1,7 @@
+---
+description: Map a survey document to produce a structured Survey Map
+---
+
 Map a survey document using the seurat-tools survey-mapper skill.
 
 ## Instructions
