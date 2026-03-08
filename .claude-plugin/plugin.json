@@ -1,7 +1,7 @@
 {
   "name": "seurat-tools",
-  "description": "Seurat Group consulting toolkit — meeting notes, survey test plans, and survey doc generation",
-  "version": "1.0.0",
+  "description": "Seurat Group consulting toolkit — meeting notes, survey test plans, survey outline to wireframe generation, and survey doc generation",
+  "version": "1.1.0",
   "author": {
     "name": "Seurat Group"
   }

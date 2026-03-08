@@ -3,13 +3,17 @@
   "owner": {
     "name": "Seurat Group"
   },
+  "metadata": {
+    "description": "Seurat Group marketplace for consulting workflows covering meeting notes, survey test plans, wireframes, and survey documentation",
+    "version": "1.1.0"
+  },
   "plugins": [
     {
       "name": "seurat-tools",
       "source": "./",
-      "description": "Seurat Group consulting toolkit — meeting notes, survey test plans, and survey doc generation. Saves 6-10 hours per survey test plan and 45-60 minutes per meeting.",
-      "version": "1.0.0",
-      "tags": ["consulting", "cpg", "meeting-notes", "survey", "test-plan"]
+      "description": "Seurat Group consulting toolkit — meeting notes, survey test plans, survey outline to wireframe generation, and survey doc generation. Saves time across research design, QA, and documentation workflows.",
+      "version": "1.1.0",
+      "tags": ["consulting", "cpg", "meeting-notes", "survey", "test-plan", "wireframe"]
     }
   ]
 }

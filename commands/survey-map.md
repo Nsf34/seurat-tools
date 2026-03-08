@@ -15,4 +15,4 @@ Map a survey document using the seurat-tools survey-mapper skill.
 ## Key Details
 - Output: Structured .md Survey Map with variable registry, categories, routing, show conditions
 - This is step 1 of the 3-skill survey test plan pipeline
-- Next step: Use /test-path to generate paths from this map
+- Next step: Use `/seurat-tools:test-path` to generate one path from this map, or `/seurat-tools:test-plan` for the full pipeline
