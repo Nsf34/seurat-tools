@@ -19,14 +19,37 @@ that a survey programmer can build from without asking a single follow-up questi
 **The output has zero tolerance for formatting errors.** Every question block, every table structure,
 every programming note, and every logic instruction must match the patterns in the reference files exactly.
 
-## Reference Files (Read ALL before writing anything)
+## Step 0: Environment Setup (MANDATORY — do this FIRST)
 
-| File | What it contains | When to consult |
-|------|-----------------|-----------------|
-| `references/question-bank.md` | **Comprehensive question template library** — every question type indexed by category with exact text, programming notes, response options, and logic | For EVERY question you write |
-| `references/formatting-standards.md` | Document structure, table formats (merged header+response table, grid table), NEW SCREEN placement | For output formatting |
-| `references/logic-and-piping.md` | Variable assignment, piping notation, terminate/quota/skip logic, anchoring conventions, Keep Rx-Ry together | For logic instructions |
-| `references/question-patterns.md` | Standard scale types, demographic response sets, channel/retailer patterns | For standard response option lists |
+Before anything else, run these commands to ensure the environment is ready:
+
+```bash
+# Install python-docx if not already present
+pip install python-docx 2>/dev/null || pip3 install python-docx 2>/dev/null
+
+# Locate the skill directory (where this SKILL.md lives)
+SKILL_DIR="$(cd "$(dirname "$(find . -path '*/survey-wireframe-to-doc/SKILL.md' -print -quit 2>/dev/null)")" && pwd)"
+echo "Skill directory: $SKILL_DIR"
+```
+
+## Reference Files — MANDATORY READS (do NOT skip)
+
+**You MUST read ALL FOUR reference files before writing a single question.** The question bank
+alone contains 1,000+ lines of exact question templates, response options, and logic patterns.
+Without it, your output will be generic and wrong. This is not optional.
+
+Read these files NOW, in this order:
+
+1. **`references/question-bank.md`** — Comprehensive question template library. Every question type
+   indexed by category with exact text, programming notes, response options, and logic.
+   **Consult this for EVERY question you write.**
+2. **`references/formatting-standards.md`** — Document structure, merged table formats, NEW SCREEN rules.
+3. **`references/logic-and-piping.md`** — Variable assignment, piping, terminate/quota/skip logic,
+   anchoring conventions, Keep Rx-Ry together.
+4. **`references/question-patterns.md`** — Standard scale types, demographic response sets, channel patterns.
+
+If you cannot read these files (e.g., path not found), STOP and ask the user to provide them.
+Do NOT proceed from memory alone — the output quality depends entirely on these references.
 
 ---
 
@@ -147,8 +170,31 @@ Every question block is separated by:
 `survey_doc_builder.py` is the formatting engine. It implements all formatting rules above.
 
 ```python
-import sys
-sys.path.insert(0, r"path/to/seurat-tools/skills/survey-wireframe-to-doc")
+import subprocess, sys, os, glob
+
+# Auto-detect the skill directory and add to path
+skill_dir = None
+for pattern in [
+    os.path.join(os.path.dirname(__file__), ''),  # Same directory as build script
+    *glob.glob('**/survey-wireframe-to-doc', recursive=True),
+    *glob.glob(os.path.expanduser('~') + '/**/survey-wireframe-to-doc', recursive=True),
+]:
+    if os.path.isfile(os.path.join(pattern, 'survey_doc_builder.py')):
+        skill_dir = pattern
+        break
+
+if skill_dir:
+    sys.path.insert(0, skill_dir)
+else:
+    # Fallback: try current directory
+    sys.path.insert(0, '.')
+
+# Ensure python-docx is installed
+try:
+    import docx
+except ImportError:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'python-docx', '-q'])
+
 from survey_doc_builder import SurveyDocBuilder
 
 builder = SurveyDocBuilder()
@@ -158,7 +204,10 @@ builder.add_section_header("Screener", objectives=[...])
 builder.add_message("Introduction Message", "", "Thank you...", "Show to all respondents.")
 builder.add_hold_terminates_note()
 builder.add_question(q_number="S1.", topic="Age", question_text="...", ...)
-builder.save("output.docx")
+
+# Save to user's Downloads folder
+downloads = os.path.join(os.path.expanduser('~'), 'Downloads')
+builder.save(os.path.join(downloads, "Study Name Survey Document v0.1.docx"))
 ```
 
 ### API Reference
@@ -328,9 +377,9 @@ healthcare, technology, finance, education, service industry, student, etc.
 
 Run the build script. Save as: `[Study Name] Survey Document v0.1.docx`
 
-Output goes to:
-- Working folder for review
-- `seurat-brain/Outputs/survey/` for permanent storage
+Output goes to the user's **Downloads folder** (e.g., `~/Downloads/` or `C:\Users\[username]\Downloads\`).
+Detect the current user's home directory and save there. This ensures the output is always
+easy to find regardless of where the wireframe lives.
 
 ---
 
