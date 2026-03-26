@@ -4,14 +4,16 @@ Survey Document Builder — python-docx engine for Seurat Group survey documents
 Generates a correctly formatted, programmer-ready survey document (.docx) from
 structured question data. Used by the survey-wireframe-to-doc skill.
 
-Formatting matches BIAH Shopper Journey Survey Document v1.0 exactly:
-  - Font: Franklin Gothic Book (document default)
-  - Header tables: qst_answers2 style — BFBFBF borders, blue (B4C6E7) R0 shading
-  - Response tables: Table Grid Light12 style — BFBFBF borders
-  - RED (FF0000) text: topic labels, question numbers, programming notes,
-    logic notes, NEW SCREEN, row numbers in Col 0, notes in Col 2
-  - BLACK text: question text (R2 Col 1), response option text (Col 1)
-  - Selection instructions: italic, black
+Key formatting rules:
+  - Font: Franklin Gothic Book, 11pt
+  - Header + response rows in ONE merged table (R0-R3 header spans all cols)
+  - Standalone 4x1 header tables only for messages, dropdowns, and open-ends
+  - RED (FF0000): topic labels, question numbers, programming notes, piped
+    variables in question text, column labels (C1:, C2:), logic notes, NEW SCREEN
+  - BLACK: question text, selection instructions (italic), response option text,
+    column header descriptions, scale labels
+  - Tables: BFBFBF borders, blue (B4C6E7) shading on R0 (topic row)
+  - Empty coding cells pre-formatted as red so manual edits auto-appear red
 
 Usage:
     from survey_doc_builder import SurveyDocBuilder
@@ -31,18 +33,20 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn, nsdecls
 from docx.oxml import parse_xml
 import os
+import re
 
-# Constants
+# ── Constants ────────────────────────────────────────────────
+
 RED = RGBColor(0xFF, 0x00, 0x00)
 BLACK = RGBColor(0x00, 0x00, 0x00)
 BLUE_FILL = "B4C6E7"       # Light blue for header R0 shading
 BORDER_COLOR = "BFBFBF"    # Light gray for all table borders
 FONT_NAME = "Franklin Gothic Book"
 FONT_SIZE = Pt(11)         # 139700 EMU
-HEADING2_COLOR = RGBColor(0x2F, 0x54, 0x96)  # Dark blue for Heading 2
+HEADING2_COLOR = RGBColor(0x2F, 0x54, 0x96)
 
-# Column widths for 3-col response tables (in dxa / twentieths of a point)
-COL0_WIDTH = 576     # Narrow number column
+# Column widths (dxa / twentieths of a point)
+COL0_WIDTH = 576     # Narrow blank/number column
 COL1_WIDTH = 6031    # Wide option text column
 COL2_WIDTH = 2748    # Medium notes column
 
@@ -53,11 +57,13 @@ class SurveyDocBuilder:
     def __init__(self):
         self.doc = Document()
         self._setup_styles()
+        self._setup_numbering()
         self._first_block = True
+
+    # ── Setup ────────────────────────────────────────────────
 
     def _setup_styles(self):
         """Configure document-level styles."""
-        # Normal style
         style = self.doc.styles['Normal']
         font = style.font
         font.name = FONT_NAME
@@ -68,14 +74,71 @@ class SurveyDocBuilder:
         pf.space_after = Pt(0)
         pf.line_spacing = 1.0
 
-        # Page margins (1 inch = 914400 EMU)
         for section in self.doc.sections:
             section.left_margin = Inches(1)
             section.right_margin = Inches(1)
             section.top_margin = Inches(1)
             section.bottom_margin = Inches(1)
 
-    # ── Helpers for red/black text ────────────────────────────
+    def _setup_numbering(self):
+        """Create a multi-level bullet numbering definition for proper Word lists."""
+        try:
+            numbering_part = self.doc.part.numbering_part
+            numbering_elm = numbering_part.element
+        except Exception:
+            self._bullet_num_id = 1
+            return
+
+        # Find next available IDs
+        abstract_nums = numbering_elm.findall(qn('w:abstractNum'))
+        next_abstract = max(
+            (int(an.get(qn('w:abstractNumId'), '0')) for an in abstract_nums),
+            default=-1
+        ) + 1
+
+        nums = numbering_elm.findall(qn('w:num'))
+        next_num = max(
+            (int(n.get(qn('w:numId'), '0')) for n in nums),
+            default=0
+        ) + 1
+
+        # 3-level bullet definition (circle, open circle, small square)
+        abstract_xml = (
+            f'<w:abstractNum {nsdecls("w")} w:abstractNumId="{next_abstract}">'
+            f'<w:multiLevelType w:val="hybridMultilevel"/>'
+            f'<w:lvl w:ilvl="0"><w:start w:val="1"/>'
+            f'<w:numFmt w:val="bullet"/>'
+            f'<w:lvlText w:val="\u2022"/>'
+            f'<w:lvlJc w:val="left"/>'
+            f'<w:pPr><w:ind w:left="720" w:hanging="360"/></w:pPr>'
+            f'</w:lvl>'
+            f'<w:lvl w:ilvl="1"><w:start w:val="1"/>'
+            f'<w:numFmt w:val="bullet"/>'
+            f'<w:lvlText w:val="o"/>'
+            f'<w:lvlJc w:val="left"/>'
+            f'<w:pPr><w:ind w:left="1440" w:hanging="360"/></w:pPr>'
+            f'<w:rPr><w:rFonts w:ascii="Courier New" w:hAnsi="Courier New"/></w:rPr>'
+            f'</w:lvl>'
+            f'<w:lvl w:ilvl="2"><w:start w:val="1"/>'
+            f'<w:numFmt w:val="bullet"/>'
+            f'<w:lvlText w:val="\u25AA"/>'
+            f'<w:lvlJc w:val="left"/>'
+            f'<w:pPr><w:ind w:left="2160" w:hanging="360"/></w:pPr>'
+            f'</w:lvl>'
+            f'</w:abstractNum>'
+        )
+
+        num_xml = (
+            f'<w:num {nsdecls("w")} w:numId="{next_num}">'
+            f'<w:abstractNumId w:val="{next_abstract}"/>'
+            f'</w:num>'
+        )
+
+        numbering_elm.append(parse_xml(abstract_xml))
+        numbering_elm.append(parse_xml(num_xml))
+        self._bullet_num_id = next_num
+
+    # ── Text helpers ─────────────────────────────────────────
 
     def _add_red_text(self, paragraph, text, bold=False, italic=False):
         """Add a run of red text to a paragraph."""
@@ -101,16 +164,34 @@ class SurveyDocBuilder:
         return run
 
     def _set_cell_red(self, cell, text):
-        """Set cell text to red (clearing any existing content)."""
+        """Set cell text to red (clearing existing content)."""
         p = cell.paragraphs[0]
         p.clear()
         self._add_red_text(p, text)
 
     def _set_cell_black(self, cell, text):
-        """Set cell text to black (clearing any existing content)."""
+        """Set cell text to black (clearing existing content)."""
         p = cell.paragraphs[0]
         p.clear()
         self._add_black_text(p, text)
+
+    def _set_cell_red_empty(self, cell):
+        """Pre-format an empty cell as red so manual additions automatically appear red."""
+        p = cell.paragraphs[0]
+        p.clear()
+        # Set default run properties on the paragraph to RED
+        pPr = p._element.get_or_add_pPr()
+        rPr_xml = (
+            f'<w:rPr {nsdecls("w")}>'
+            f'<w:color w:val="FF0000"/>'
+            f'<w:rFonts w:ascii="{FONT_NAME}" w:hAnsi="{FONT_NAME}"/>'
+            f'<w:sz w:val="22"/>'
+            f'</w:rPr>'
+        )
+        existing = pPr.find(qn('w:rPr'))
+        if existing is not None:
+            pPr.remove(existing)
+        pPr.append(parse_xml(rPr_xml))
 
     def _set_cell_shading(self, cell, fill_color):
         """Apply background shading to a cell."""
@@ -131,7 +212,29 @@ class SurveyDocBuilder:
             tcW.set(qn('w:w'), str(width_dxa))
             tcW.set(qn('w:type'), 'dxa')
 
-    # ── Table border / style helpers ─────────────────────────
+    # ── Question text parsing ────────────────────────────────
+
+    def _parse_question_text(self, question_text, selection_instruction):
+        """Parse question text into formatted runs.
+
+        Piped variables like <brand> are rendered in RED.
+        Selection instruction is appended in italic BLACK.
+
+        Returns list of (text, is_italic, is_red) tuples.
+        """
+        runs = []
+        parts = re.split(r'(<[^>]+>)', question_text)
+        for part in parts:
+            if part.startswith('<') and part.endswith('>'):
+                runs.append((part, False, True))   # piped variable → RED
+            elif part:
+                runs.append((part, False, False))  # normal text → BLACK
+        runs.append((" ", False, False))
+        if selection_instruction:
+            runs.append((selection_instruction, True, False))  # italic BLACK
+        return runs
+
+    # ── Table helpers ────────────────────────────────────────
 
     def _set_table_borders(self, table):
         """Set BFBFBF borders on all sides of a table."""
@@ -139,88 +242,168 @@ class SurveyDocBuilder:
         tbl_pr = tbl.tblPr if tbl.tblPr is not None else parse_xml(
             f'<w:tblPr {nsdecls("w")}/>'
         )
-
-        borders_xml = f'''<w:tblBorders {nsdecls("w")}>
-            <w:top w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>
-            <w:left w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>
-            <w:bottom w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>
-            <w:right w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>
-            <w:insideH w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>
-            <w:insideV w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>
-        </w:tblBorders>'''
-
+        borders_xml = (
+            f'<w:tblBorders {nsdecls("w")}>'
+            f'<w:top w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>'
+            f'<w:left w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>'
+            f'<w:bottom w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>'
+            f'<w:right w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>'
+            f'<w:insideH w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>'
+            f'<w:insideV w:val="single" w:sz="4" w:space="0" w:color="{BORDER_COLOR}"/>'
+            f'</w:tblBorders>'
+        )
         borders = parse_xml(borders_xml)
-
         existing = tbl_pr.find(qn('w:tblBorders'))
         if existing is not None:
             tbl_pr.remove(existing)
         tbl_pr.append(borders)
 
-    def _build_header_table(self, topic, q_number, question_text_runs, programming_note):
-        """
-        Build a 4-row header table matching Seurat format.
+    def _fill_header_rows(self, table, num_cols, topic, q_number, text_runs, prog_note):
+        """Fill the first 4 rows (R0-R3) of a table with merged header content.
 
-        Args:
-            topic: Topic label text (RED, blue background)
-            q_number: Question number like "S1.", "Q101.", "M1." (RED)
-            question_text_runs: List of (text, is_italic) tuples for R2
-            programming_note: Programming note text (RED)
+        Cells in R0-R3 are horizontally merged across all columns so the header
+        spans the full table width.
+        """
+        # Merge R0-R3 across all columns
+        for r in range(4):
+            if num_cols > 1:
+                table.cell(r, 0).merge(table.cell(r, num_cols - 1))
+
+        # R0: Topic — RED text on blue background
+        r0 = table.cell(0, 0)
+        self._set_cell_red(r0, topic)
+        self._set_cell_shading(r0, BLUE_FILL)
+
+        # R1: Question number — RED text
+        r1 = table.cell(1, 0)
+        if q_number:
+            self._set_cell_red(r1, q_number)
+        else:
+            r1.text = ""
+
+        # R2: Question text (piped variables RED) + selection instruction (italic BLACK)
+        r2 = table.cell(2, 0)
+        p = r2.paragraphs[0]
+        p.clear()
+        for text, is_italic, is_red in text_runs:
+            if is_red:
+                self._add_red_text(p, text, italic=is_italic)
+            else:
+                self._add_black_text(p, text, italic=is_italic)
+
+        # R3: Programming note — RED text
+        r3 = table.cell(3, 0)
+        self._set_cell_red(r3, prog_note)
+
+    def _build_header_table(self, topic, q_number, text_runs, prog_note):
+        """Build a standalone 4-row x 1-col header table.
+
+        Used for messages, dropdowns, and open-end questions that have no
+        response table to merge into.
         """
         table = self.doc.add_table(rows=4, cols=1)
         self._set_table_borders(table)
-
-        # R0: Topic — RED text on blue background
-        r0_cell = table.cell(0, 0)
-        self._set_cell_red(r0_cell, topic)
-        self._set_cell_shading(r0_cell, BLUE_FILL)
-
-        # R1: Question number — RED text
-        r1_cell = table.cell(1, 0)
-        if q_number:
-            self._set_cell_red(r1_cell, q_number)
-        else:
-            r1_cell.text = ""
-
-        # R2: Question text (black) + selection instruction (italic black)
-        r2_cell = table.cell(2, 0)
-        p = r2_cell.paragraphs[0]
-        p.clear()
-        for text, is_italic in question_text_runs:
-            self._add_black_text(p, text, italic=is_italic)
-
-        # R3: Programming note — RED text
-        r3_cell = table.cell(3, 0)
-        self._set_cell_red(r3_cell, programming_note)
-
+        self._fill_header_rows(table, 1, topic, q_number, text_runs, prog_note)
         return table
 
-    # ── NEW SCREEN ────────────────────────────────────────────
+    def _create_merged_table(self, total_rows, num_cols, topic, q_number, text_runs, prog_note):
+        """Create a table with merged header rows (R0-R3) + response rows below."""
+        table = self.doc.add_table(rows=total_rows, cols=num_cols)
+        self._set_table_borders(table)
+        self._fill_header_rows(table, num_cols, topic, q_number, text_runs, prog_note)
+        return table
+
+    def _fill_grid_header_cell(self, cell, header_text):
+        """Fill a grid column header cell with split formatting.
+
+        'C1:' prefix is RED, descriptive text after is BLACK.
+        """
+        p = cell.paragraphs[0]
+        p.clear()
+        match = re.match(r'(C\d+:\s*)(.*)', header_text)
+        if match:
+            self._add_red_text(p, match.group(1))
+            if match.group(2):
+                self._add_black_text(p, match.group(2))
+        else:
+            # No C-prefix — render entirely in red
+            self._add_red_text(p, header_text)
+
+    # ── NEW SCREEN ──────────────────────────────────────────
 
     def _add_new_screen(self):
-        """Add 'NEW SCREEN' paragraph in red between question blocks, with spacing."""
-        self.doc.add_paragraph()  # blank line before
+        """Add 'NEW SCREEN' separator in red between question blocks."""
+        self.doc.add_paragraph()  # blank line
         p = self.doc.add_paragraph()
         self._add_red_text(p, "NEW SCREEN")
 
-    # ── Logic notes ───────────────────────────────────────────
+    # ── Logic notes ─────────────────────────────────────────
 
     def _add_logic_note(self, text, bold=False):
-        """Add a red logic/programming note paragraph."""
+        """Add a red logic/programming note paragraph after a question."""
         p = self.doc.add_paragraph()
         self._add_red_text(p, text, bold=bold)
 
-    # ── Study Info ────────────────────────────────────────────
+    # ── List item helpers ───────────────────────────────────
+
+    def _add_list_item(self, text, level=0, bold=False):
+        """Add a properly formatted bullet list item at the given indentation level.
+
+        Uses Word numbering definitions for real interactive bullets
+        (level 0 = bullet, level 1 = sub-bullet, level 2 = sub-sub-bullet).
+        """
+        p = self.doc.add_paragraph(style='List Paragraph')
+
+        # Set numPr for proper Word bullets
+        pPr = p._element.get_or_add_pPr()
+        numPr_xml = (
+            f'<w:numPr {nsdecls("w")}>'
+            f'<w:ilvl w:val="{level}"/>'
+            f'<w:numId w:val="{self._bullet_num_id}"/>'
+            f'</w:numPr>'
+        )
+        existing = pPr.find(qn('w:numPr'))
+        if existing is not None:
+            pPr.remove(existing)
+        pPr.insert(0, parse_xml(numPr_xml))
+
+        run = p.add_run(text)
+        run.font.name = FONT_NAME
+        run.font.size = FONT_SIZE
+        if bold:
+            run.bold = True
+        return p
+
+    def _add_nested_list(self, items, level=0):
+        """Add nested list items recursively.
+
+        Each item is either:
+          - str: plain bullet at current level
+          - (str, [sub_items]): bullet with nested sub-items
+        """
+        for item in items:
+            if isinstance(item, str):
+                self._add_list_item(item, level=level)
+            elif isinstance(item, tuple) and len(item) == 2:
+                text, sub = item
+                if isinstance(sub, list):
+                    self._add_list_item(text, level=level)
+                    self._add_nested_list(sub, level=level + 1)
+                else:
+                    # (text, note) — just a plain item with appended note
+                    combined = f"{text} — {sub}" if sub else text
+                    self._add_list_item(combined, level=level)
+
+    # ── Study Info ──────────────────────────────────────────
 
     def set_study_info(self, title: str, date: str, doc_type: str = "Quantitative Survey Document"):
         """Add the title page header."""
-        # Title
         p = self.doc.add_paragraph()
         run = p.add_run(title)
         run.bold = True
         run.font.name = FONT_NAME
         run.font.size = Pt(14)
 
-        # Doc type
         p = self.doc.add_paragraph()
         run = p.add_run(doc_type)
         run.bold = True
@@ -228,7 +411,6 @@ class SurveyDocBuilder:
         run.font.size = Pt(12)
         run.font.color.rgb = BLACK
 
-        # Date
         p = self.doc.add_paragraph()
         run = p.add_run(date)
         run.font.name = FONT_NAME
@@ -237,54 +419,42 @@ class SurveyDocBuilder:
 
         self.doc.add_paragraph()  # blank line
 
-    # ── Overview ──────────────────────────────────────────────
+    # ── Overview ────────────────────────────────────────────
 
     def add_overview(self, objectives: list, structure: list, criteria: list):
-        """Add the Study Overview section."""
+        """Add the Study Overview section with proper Word bullet formatting.
+
+        Args:
+            objectives: list of strings or (text, [sub_items]) tuples
+            structure: list of (section_name, [sub_bullets]) tuples
+            criteria: list of strings or (text, [sub_items]) tuples (supports nesting)
+        """
         h = self.doc.add_heading("Survey Overview", level=1)
         for run in h.runs:
             run.font.size = Pt(12)
 
-        # Objectives
-        h2 = self.doc.add_heading("Objectives", level=2)
-        for obj in objectives:
-            p = self.doc.add_paragraph(style='List Paragraph')
-            run = p.add_run(obj)
-            run.font.name = FONT_NAME
-            run.font.size = FONT_SIZE
+        # Research Objectives
+        self.doc.add_heading("Research Objectives", level=2)
+        self._add_nested_list(objectives)
 
         # Survey Structure
-        h2 = self.doc.add_heading("Survey Structure", level=2)
+        self.doc.add_heading("Survey Structure", level=2)
         for section_name, sub_bullets in structure:
-            p = self.doc.add_paragraph(style='List Paragraph')
-            run = p.add_run(section_name)
-            run.bold = True
-            run.font.name = FONT_NAME
-            run.font.size = FONT_SIZE
+            self._add_list_item(section_name, level=0, bold=True)
             for sub in sub_bullets:
-                sp = self.doc.add_paragraph()
-                sp.paragraph_format.left_indent = Inches(0.5)
-                run = sp.add_run(sub)
-                run.font.name = FONT_NAME
-                run.font.size = FONT_SIZE
+                self._add_list_item(sub, level=1)
 
         # Respondent Criteria & Quotas
-        h2 = self.doc.add_heading("Respondent Criteria & Quotas", level=2)
-        for crit in criteria:
-            p = self.doc.add_paragraph()
-            run = p.add_run(crit)
-            run.font.name = FONT_NAME
-            run.font.size = FONT_SIZE
+        self.doc.add_heading("Respondent Criteria & Quotas", level=2)
+        self._add_nested_list(criteria)
 
-    # ── Section Headers ───────────────────────────────────────
+    # ── Section Headers ─────────────────────────────────────
 
     def add_section_header(self, section_name: str, objectives: list):
-        """Add a section header with objective bullets."""
+        """Add a section header with bulleted objectives."""
         self.doc.add_paragraph()
+        self.doc.add_heading(section_name, level=2)
 
-        h = self.doc.add_heading(section_name, level=2)
-
-        # Objectives label
         p = self.doc.add_paragraph()
         run = p.add_run("Objectives:")
         run.bold = True
@@ -292,16 +462,9 @@ class SurveyDocBuilder:
         run.font.size = FONT_SIZE
 
         for obj in objectives:
-            p = self.doc.add_paragraph(style='List Paragraph')
-            run = p.add_run(obj)
-            run.font.name = FONT_NAME
-            run.font.size = FONT_SIZE
+            self._add_list_item(obj, level=0)
 
-        # Reset first_block so first question in section doesn't get NEW SCREEN
-        # Actually we want NEW SCREEN before every question/message after a section header
-        # But the hold terminates note comes first, so leave _first_block as-is
-
-    # ── Hold Terminates Note ──────────────────────────────────
+    # ── Hold Terminates Note ────────────────────────────────
 
     def add_hold_terminates_note(self):
         """Add the standard hold terminates note (RED, bold)."""
@@ -312,30 +475,23 @@ class SurveyDocBuilder:
             bold=True
         )
 
-    # ── Message Blocks ────────────────────────────────────────
+    # ── Message Blocks ──────────────────────────────────────
 
     def add_message(self, topic: str, q_number: str, message_text: str, show_condition: str):
-        """
-        Add a message/transition screen.
-
-        Args:
-            topic: e.g., "Introduction Message", "Message"
-            q_number: e.g., "M1.", "M2." (RED in R1)
-            message_text: The message body text (black in R2)
-            show_condition: e.g., "Show to all respondents." (RED in R3)
-        """
+        """Add a message/transition screen (standalone 4x1 header table)."""
         if not self._first_block:
             self._add_new_screen()
         self._first_block = False
 
+        text_runs = self._parse_question_text(message_text, "")
         self._build_header_table(
             topic=topic,
             q_number=q_number,
-            question_text_runs=[(message_text, False)],
-            programming_note=show_condition
+            text_runs=text_runs,
+            prog_note=show_condition
         )
 
-    # ── Question Blocks ───────────────────────────────────────
+    # ── Question Blocks ─────────────────────────────────────
 
     def add_question(
         self,
@@ -351,181 +507,231 @@ class SurveyDocBuilder:
         scale_labels: list = None,
         bipolar_pairs: list = None,
     ):
-        """
-        Add a complete question block.
+        """Add a complete question block.
+
+        For question types with response tables (simple, grid, scale, bipolar),
+        the header rows (R0-R3) and response rows are merged into a single table.
+        For dropdown/open_end, a standalone header table is used.
 
         Args:
-            q_number: "S1.", "Q101.", "D1." etc. — goes in R1 in RED
+            q_number: "S1.", "Q101.", "D1." — goes in R1 in RED
             topic: Topic label — goes in R0 with blue shading, RED text
-            question_text: Question wording (BLACK)
+            question_text: Question wording (BLACK, piped <variables> in RED)
             selection_instruction: e.g., "Select one." (italic BLACK)
             programming_note: Goes in R3 in RED
-            response_options: List of tuples. Format depends on question_type:
+            response_options: List of tuples (format varies by question_type):
                 - simple: [(option_text, note), ...]
                 - 2col_grid: [(option_text, c1_note, c2_note), ...]
                 - 3col_grid: [(option_text, c1_note, c2_note, c3_note), ...]
-            grid_headers: For grids, list of column header strings.
-            logic_notes: List of logic instruction strings (added as RED paragraphs)
+                - scale: [(statement_text, condition), ...] or [statement_text, ...]
+            grid_headers: Column header strings for grids (e.g., "C1: Aware of")
+            logic_notes: Logic instruction strings (RED paragraphs after table)
             question_type: "simple"|"2col_grid"|"3col_grid"|"scale"|"bipolar"|"dropdown"|"open_end"
-            scale_labels: For "scale" type, list of scale point labels.
-            bipolar_pairs: For "bipolar" type, list of (left, right) tuples.
+            scale_labels: For "scale" type, list of scale point labels
+            bipolar_pairs: For "bipolar" type, list of (left, right) tuples
         """
         if not self._first_block:
             self._add_new_screen()
         self._first_block = False
 
-        # Build R2 runs: question text (normal) + space + selection instruction (italic)
-        r2_runs = [(question_text + " ", False), (selection_instruction, True)]
+        text_runs = self._parse_question_text(question_text, selection_instruction)
 
-        # Header table
-        self._build_header_table(
-            topic=topic,
-            q_number=q_number,
-            question_text_runs=r2_runs,
-            programming_note=programming_note
-        )
-
-        # Response table
         if question_type == "simple" and response_options:
-            self._add_simple_response_table(response_options)
+            num_cols = 3
+            total_rows = 4 + len(response_options)
+            table = self._create_merged_table(
+                total_rows, num_cols, topic, q_number, text_runs, programming_note
+            )
+            self._fill_simple_rows(table, response_options, start_row=4)
 
-        elif question_type == "2col_grid" and response_options:
-            self._add_grid_response_table(response_options, grid_headers, num_data_cols=2)
+        elif question_type in ("2col_grid", "3col_grid") and response_options:
+            num_data_cols = 2 if question_type == "2col_grid" else 3
+            num_cols = 2 + num_data_cols
+            # +1 for column header row (C1, C2, etc.)
+            total_rows = 4 + 1 + len(response_options)
+            table = self._create_merged_table(
+                total_rows, num_cols, topic, q_number, text_runs, programming_note
+            )
+            self._fill_grid_rows(
+                table, response_options, grid_headers, num_data_cols, header_row=4
+            )
 
-        elif question_type == "3col_grid" and response_options:
-            self._add_grid_response_table(response_options, grid_headers, num_data_cols=3)
-
-        elif question_type == "scale" and scale_labels and response_options:
-            self._add_scale_table(scale_labels, response_options)
+        elif question_type == "scale" and scale_labels:
+            # Merged header + scale numbers + scale labels (one table)
+            num_points = len(scale_labels)
+            total_rows = 4 + 2  # R0-R3 header + numbers row + labels row
+            table = self._create_merged_table(
+                total_rows, num_points, topic, q_number, text_runs, programming_note
+            )
+            self._fill_scale_header(table, scale_labels, start_row=4)
+            # Separate statement table below (if statements provided)
+            if response_options:
+                self._add_scale_statements(response_options)
 
         elif question_type == "bipolar" and bipolar_pairs:
-            self._add_bipolar_table(bipolar_pairs)
+            num_cols = 3  # blank | C1 | C2
+            total_rows = 4 + 1 + len(bipolar_pairs)  # header + C1/C2 row + pairs
+            table = self._create_merged_table(
+                total_rows, num_cols, topic, q_number, text_runs, programming_note
+            )
+            self._fill_bipolar_rows(table, bipolar_pairs, header_row=4)
 
-        # dropdown and open_end: no response table
+        else:
+            # dropdown, open_end — standalone header table only
+            self._build_header_table(topic, q_number, text_runs, programming_note)
 
         # Logic notes (RED paragraphs after the table)
         if logic_notes:
             for note in logic_notes:
                 self._add_logic_note(note)
 
-    # ── Response Table Builders ───────────────────────────────
+    # ── Response Row Builders ───────────────────────────────
 
-    def _add_simple_response_table(self, options: list):
-        """
-        Simple response table: N rows × 3 cols.
-        Col 0: Row number (RED) — "1.", "2.", etc.
-        Col 1: Option text (BLACK)
-        Col 2: Note (RED)
-        """
-        table = self.doc.add_table(rows=len(options), cols=3)
-        self._set_table_borders(table)
+    def _fill_simple_rows(self, table, options, start_row):
+        """Fill response rows in a simple 3-col merged table.
 
+        Col 0: blank (red-formatted for manual use)
+        Col 1: option text (BLACK)
+        Col 2: note (RED, pre-formatted even if empty)
+        """
         for i, (opt_text, note) in enumerate(options):
-            # Col 0: Row number in RED
-            c0 = table.cell(i, 0)
-            self._set_cell_red(c0, f"{i + 1}.")
+            row = start_row + i
+
+            # Col 0: blank, red-formatted
+            c0 = table.cell(row, 0)
+            self._set_cell_red_empty(c0)
             self._set_cell_width(c0, COL0_WIDTH)
 
-            # Col 1: Option text in BLACK
-            c1 = table.cell(i, 1)
+            # Col 1: option text (BLACK)
+            c1 = table.cell(row, 1)
             self._set_cell_black(c1, opt_text)
             self._set_cell_width(c1, COL1_WIDTH)
 
-            # Col 2: Note in RED
-            c2 = table.cell(i, 2)
+            # Col 2: note (RED) — always red-formatted even if empty
+            c2 = table.cell(row, 2)
             if note:
                 self._set_cell_red(c2, note)
             else:
-                c2.text = ""
+                self._set_cell_red_empty(c2)
             self._set_cell_width(c2, COL2_WIDTH)
 
-    def _add_grid_response_table(self, options: list, headers: list, num_data_cols: int):
-        """
-        Grid response table with header row.
+    def _fill_grid_rows(self, table, options, headers, num_data_cols, header_row):
+        """Fill grid column header row + data rows.
 
-        Total columns = 2 + num_data_cols (blank + option + C1 + C2 [+ C3])
-        Header row: blank | blank | C1 header (RED) | C2 header (RED) [| C3 header (RED)]
-        Data rows: blank | option (BLACK) | c1_note (RED) | c2_note (RED) [| c3_note (RED)]
+        header_row: row index for column headers (C1, C2, etc.)
+        Data rows start at header_row + 1.
+
+        Column headers: "C1:" prefix in RED, descriptive text in BLACK.
         """
         total_cols = 2 + num_data_cols
-        num_rows = len(options) + 1  # +1 for header
-        table = self.doc.add_table(rows=num_rows, cols=total_cols)
-        self._set_table_borders(table)
 
-        # Header row
-        table.cell(0, 0).text = ""
-        table.cell(0, 1).text = ""
+        # Column header row
+        table.cell(header_row, 0).text = ""
+        table.cell(header_row, 1).text = ""
         if headers:
             for h_idx, h_text in enumerate(headers):
                 col_idx = h_idx + 2
                 if col_idx < total_cols:
-                    self._set_cell_red(table.cell(0, col_idx), h_text)
+                    self._fill_grid_header_cell(table.cell(header_row, col_idx), h_text)
 
         # Data rows
+        data_start = header_row + 1
         for i, option_data in enumerate(options):
-            row_idx = i + 1
-            # Col 0: Row number in RED
-            self._set_cell_red(table.cell(row_idx, 0), f"{i + 1}.")
-            self._set_cell_width(table.cell(row_idx, 0), COL0_WIDTH)
+            row = data_start + i
+
+            # Col 0: blank, red-formatted
+            self._set_cell_red_empty(table.cell(row, 0))
+            self._set_cell_width(table.cell(row, 0), COL0_WIDTH)
 
             # Col 1: option text (BLACK)
-            self._set_cell_black(table.cell(row_idx, 1), option_data[0])
+            self._set_cell_black(table.cell(row, 1), option_data[0])
 
-            # Remaining columns: notes (RED)
+            # Remaining columns: notes (RED, pre-formatted even if empty)
             for c in range(1, len(option_data)):
                 col_idx = c + 1
-                if col_idx < total_cols and option_data[c]:
-                    self._set_cell_red(table.cell(row_idx, col_idx), option_data[c])
+                if col_idx < total_cols:
+                    if option_data[c]:
+                        self._set_cell_red(table.cell(row, col_idx), option_data[c])
+                    else:
+                        self._set_cell_red_empty(table.cell(row, col_idx))
 
-    def _add_scale_table(self, scale_labels: list, statements: list):
+    def _fill_scale_header(self, table, scale_labels, start_row):
+        """Fill scale number row and label row within a merged table.
+
+        start_row: row for numbers (RED)
+        start_row + 1: row for labels (BLACK, label text only — no number prefix)
         """
-        Agreement scale: 2-row scale table + statement table.
-
-        Scale table R0: numbers (1, 2, 3...) in RED
-        Scale table R1: labels (Strongly disagree, etc.) in BLACK
-        Statement table: blank | statement (BLACK) | condition (RED)
-        """
-        num_points = len(scale_labels)
-
-        # Scale label table (2 rows × N cols)
-        scale_table = self.doc.add_table(rows=2, cols=num_points)
-        self._set_table_borders(scale_table)
-
         for i, label in enumerate(scale_labels):
-            # R0: number in RED
-            self._set_cell_red(scale_table.cell(0, i), str(i + 1))
-            # R1: label text in BLACK
-            self._set_cell_black(scale_table.cell(1, i), f"{i + 1} {label}")
+            # Numbers row: RED
+            self._set_cell_red(table.cell(start_row, i), str(i + 1))
+            # Labels row: BLACK (label text only, no number prefix)
+            self._set_cell_black(table.cell(start_row + 1, i), label)
 
-        # Statement table (N rows × 3 cols)
-        stmt_table = self.doc.add_table(rows=len(statements), cols=3)
+    def _add_scale_statements(self, statements):
+        """Add a separate statement table for scale batteries.
+
+        Format: N rows x 2 cols (blank | statement).
+        If any statement has a condition, adds a 3rd column (RED).
+
+        Args:
+            statements: list of strings, or list of (text, condition) tuples
+        """
+        # Normalize to tuples
+        normalized = []
+        for stmt in statements:
+            if isinstance(stmt, str):
+                normalized.append((stmt, ""))
+            else:
+                normalized.append((stmt[0], stmt[1] if len(stmt) > 1 else ""))
+
+        has_conditions = any(cond for _, cond in normalized)
+        num_cols = 3 if has_conditions else 2
+
+        stmt_table = self.doc.add_table(rows=len(normalized), cols=num_cols)
         self._set_table_borders(stmt_table)
 
-        for i, (stmt_text, condition) in enumerate(statements):
-            # Col 0: Row number in RED
-            self._set_cell_red(stmt_table.cell(i, 0), f"{i + 1}.")
+        for i, (stmt_text, condition) in enumerate(normalized):
+            # Col 0: blank, red-formatted
+            self._set_cell_red_empty(stmt_table.cell(i, 0))
             self._set_cell_width(stmt_table.cell(i, 0), COL0_WIDTH)
-            # Col 1: Statement text in BLACK
+
+            # Col 1: statement text (BLACK)
             self._set_cell_black(stmt_table.cell(i, 1), stmt_text)
-            # Col 2: Condition in RED
-            if condition:
-                self._set_cell_red(stmt_table.cell(i, 2), condition)
 
-    def _add_bipolar_table(self, pairs: list):
-        """
-        Bipolar/slider scale: each row = row# (RED) | left (BLACK) | scale (RED numbers) | right (BLACK).
-        """
-        table = self.doc.add_table(rows=len(pairs), cols=4)
-        self._set_table_borders(table)
+            # Col 2: condition (RED) — only if column exists
+            if has_conditions:
+                if condition:
+                    self._set_cell_red(stmt_table.cell(i, 2), condition)
+                else:
+                    self._set_cell_red_empty(stmt_table.cell(i, 2))
 
+    def _fill_bipolar_rows(self, table, pairs, header_row):
+        """Fill bipolar/slider scale rows.
+
+        header_row: row for C1/C2 column labels (RED)
+        Data rows: blank | left statement (BLACK) | right statement (BLACK)
+
+        The programmer builds the actual numeric scale from the programming note.
+        """
+        # C1/C2 header row
+        self._set_cell_red_empty(table.cell(header_row, 0))
+        p = table.cell(header_row, 1).paragraphs[0]
+        p.clear()
+        self._add_red_text(p, "C1")
+        p = table.cell(header_row, 2).paragraphs[0]
+        p.clear()
+        self._add_red_text(p, "C2")
+
+        # Data rows: left statement | right statement
+        data_start = header_row + 1
         for i, (left, right) in enumerate(pairs):
-            self._set_cell_red(table.cell(i, 0), f"{i + 1}.")
-            self._set_cell_width(table.cell(i, 0), COL0_WIDTH)
-            self._set_cell_black(table.cell(i, 1), left)
-            self._set_cell_red(table.cell(i, 2), "1 — 2 — 3 — 4 — 5")
-            self._set_cell_black(table.cell(i, 3), right)
+            row = data_start + i
+            self._set_cell_red_empty(table.cell(row, 0))
+            self._set_cell_width(table.cell(row, 0), COL0_WIDTH)
+            self._set_cell_black(table.cell(row, 1), left)
+            self._set_cell_black(table.cell(row, 2), right)
 
-    # ── Save ──────────────────────────────────────────────────
+    # ── Save ────────────────────────────────────────────────
 
     def save(self, filepath: str):
         """Save the document to the specified path."""
@@ -538,7 +744,7 @@ class SurveyDocBuilder:
         return filepath
 
 
-# ── Wireframe Parser ──────────────────────────────────────────
+# ── Wireframe Parser ────────────────────────────────────────
 
 def parse_wireframe(filepath: str) -> dict:
     """

@@ -10,18 +10,19 @@ Use this to build full response option lists from wireframe shorthand like "(e.g
 ### 5-Point Agreement Scale
 Use for attitude/belief statements ("How much do you agree with…")
 ```
-Programming note: 5 pt scale. Randomize items. Single select per statement.
+Programming note: Program as 5-point scale. Randomize. Single select per statement.
 
 | Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat agree | Strongly agree |
 ```
+Scale labels are BLACK, no number prefix.
 
 ### 4-Point Two-Sided Scale (Bipolar / Slider)
 Use for paired opposing statements ("Which better describes you…")
 ```
 Programming note: Program as a 4-point scale with one statement anchoring each side.
-Single select per row. Program as a 5-point scale with arrow starting in the middle.
+Single select per row. Randomize statements.
 
-Left statement [1 — 2 — 3 — 4] Right statement
+Col 0: blank | C1: Left statement (BLACK) | C2: Right statement (BLACK)
 ```
 Example pairs:
 - "Hair care is just another part of my daily hygiene routine" vs. "Hair care is a critical part of my overall self-care / wellness routine"
@@ -84,7 +85,7 @@ Do not randomize. Single select.
 | Transgender male |
 | Transgender female |
 | Gender variant / non-conforming |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | Prefer not to answer | Anchor. Mutually exclusive.
 ```
 
@@ -98,7 +99,7 @@ Do not randomize. Multi-select.
 | Native American |
 | Eskimo or Aleut |
 | Hispanic / Latino | [quota note]
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | Prefer not to answer | Anchor. Mutually exclusive.
 ```
 
@@ -142,23 +143,28 @@ Do not randomize. Single select.
 
 ---
 
-## Sensitive Industry Screener (Standard)
-Always included early in screener. Terminate immediately on select.
-```
-Randomize. Multi-select.
+## Sensitive Industry / Occupation Screener (Standard)
 
-| Advertising | Terminate
-| Marketing | Terminate
-| Consumer goods manufacturing | Terminate
-| Consumer goods retailer | Terminate
-| Health care |
-| Financial services |
-| Education |
-| Public relations |
-| Retired |
+Always included early in screener. Terminate immediately on select of sensitive industries.
+**CRITICAL: Include non-terminating example occupations** so respondents can see what's acceptable.
+
+```
+Do not randomize. Multi-select.
+
+| Market research or advertising | Terminate.
+| [Category]-related manufacturing or distribution | Terminate.
+| [Category] service provider (e.g., landscaping) | Terminate.
+| [Category] retail | Terminate.
+| Home improvement or hardware retail |
+| Finance and/or consulting |
+| Service industry |
+| Technology |
+| Healthcare |
+| Leisure and hospitality |
+| Student |
 | None of the above | Anchor. Mutually exclusive.
 ```
-*Terminate immediately respondents who select any qualifying industry.*
+*Terminate immediately if any sensitive industry is selected.*
 
 ---
 
@@ -177,7 +183,7 @@ Randomize. Multi-select in C1, single select in C2.
 | Drugstore (e.g., CVS, Walgreens) | | | <drug>
 | Specialty beauty store (e.g., Sephora, Ulta) | | | <specialty beauty>
 | Dollar store (e.g., Dollar General) | | | <dollar>
-| Other, please specify | | | Anchor. Leave space.
+| Other, please specify | | | Anchor. Open end.
 | None of the above | | | Anchor. Mutually exclusive.
 ```
 
@@ -215,7 +221,7 @@ Do not randomize. Single select.
 | A different product from the same brand |
 | A different size of the same product |
 | Nothing — I would have left without purchasing |
-| Other, please specify | Anchor. Leave space.
+| Other, please specify | Anchor. Open end.
 ```
 
 ---
@@ -231,7 +237,7 @@ Must select in C1 to select in C2.
 | [Brand A] | | | Show for all
 | [Brand B] | | | Show for <shampoo> only
 | Private label / store branded | | | Anchor.
-| Other, please specify | | | Anchor. Leave a space.
+| Other, please specify | | | Anchor. Open end.
 ```
 
 ---
@@ -255,15 +261,20 @@ Rank top 5. Randomize piped items.
 
 ## Open-End Questions
 ```
-Open end. Leave space for text entry.
+Open end.
 [Character limit if applicable, e.g., max 500 characters]
 ```
 
 ---
 
 ## Quality Check (Pizza Water)
-Include in at least one early grid question (typically category purchase or usage frequency grid):
+
+**Place in a screener question** (not a body question) so inattentive respondents
+are terminated before the main survey begins.
+
+Include in an early grid question (e.g., category purchase grid or brand grid):
 ```
 | Pizza water | Terminate. | Terminate.
 ```
-This is a nonsensical option used to identify inattentive respondents. Terminate immediately on selection in either column.
+This is a nonsensical option used to identify inattentive respondents.
+Terminate immediately on selection in either column.

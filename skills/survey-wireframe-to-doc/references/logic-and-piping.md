@@ -6,7 +6,7 @@ How to translate wireframe objectives into survey programming logic.
 
 ## Piping Notation
 
-All dynamic text uses `<angle_bracket_variables>`. Variables are assigned during the screener and referenced throughout the survey body.
+All dynamic text uses `<angle_bracket_variables>`. Variables are assigned during the screener and referenced throughout the survey body. **Piped variables in question text are rendered in RED automatically.**
 
 ### Standard Variable Names
 | Variable | What it holds | Typically assigned in |
@@ -99,6 +99,9 @@ Terminate immediately if respondent does not select at least [N] responses acros
 Skip to S21 and then terminate immediately.
 ```
 
+**Do NOT repeat**: If the terminate instruction is already in R3 (programming note),
+do not also add it as a logic note below. Each instruction appears once.
+
 For quota-based terminates:
 ```
 Terminate if quota for [cell] is met.
@@ -178,7 +181,7 @@ Only show to respondents assigned <styling>.
 Do not show question if respondent is assigned to channel = <ecomm> — auto-assign <online>.
 ```
 
-In response option tables (column 3):
+In response option tables (right column):
 ```
 | Statement about beauty trends | Only show if respondent is <female>
 | Statement about wellness trends | Only show if respondent is non-<female>
@@ -203,18 +206,10 @@ M[N].
 Show to all respondents. / Show to [specific segment only].
 ```
 
-Within question tables, when messages appear mid-section:
-```
-Message: [Text]
-[Repeat text across all table columns to indicate it spans the full row]
-```
-
 Example patterns:
 - "Thank you in advance for your time. We're excited to hear about your shopping habits!"
 - "Thanks for taking the time to complete our study. First, we're going to ask you some questions about your attitudes towards [topic]."
 - "We'd now like to focus more on your overall routine and the moments when you're using `<brand>`."
-- "You said you use `<brand>` `<segment>` for `<occasion>`. Now, we want to ask you more about the last time you used `<brand>` `<segment>` for `<occasion>`."
-- "Keep thinking about the last trip you made to `<retailer>` to buy `<brand>` `<segment>`. We now want to learn more about why you bought `<brand>` `<segment>` specifically."
 
 ---
 
@@ -222,15 +217,28 @@ Example patterns:
 
 Standard anchor options always appear at the bottom of response lists:
 ```
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | None of the above | Anchor. Mutually exclusive.
 | Prefer not to answer | Anchor. Mutually exclusive. [/ Terminate if applicable]
 ```
 
-To lock specific non-anchor items in place:
+**Use "Anchor. Open end."** (not "Anchor. Leave a space.") for open-end anchor items.
+
+### Keep Related Options Together
+When response options form a sub-category or are closely related, add grouping coding:
 ```
-| Option X | Keep R[N]–R[M] together
+| Option A | Keep R1-R2 together.
+| Option B | Keep R1-R2 together.
+| Option C | Keep R3-R4 together.
+| Option D | Keep R3-R4 together.
 ```
+
+This tells the programmer to keep grouped items adjacent during randomization.
+
+### Randomize Convention
+Write `Randomize.` — that's all. **Do NOT write** "Randomize (except anchored items)."
+or "Randomize (except 'Other')." — anchored items are already excluded by their
+`Anchor.` coding in Col 2.
 
 To lock randomized items relative to each other but allow group to randomize:
 ```

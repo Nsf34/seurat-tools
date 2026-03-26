@@ -50,7 +50,7 @@ Ensure the following quotas are met: [study-specific min/max per generation].
 | Transgender male |
 | Transgender female |
 | Gender variant / non-conforming |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | Prefer not to answer | Anchor. Mutually exclusive.
 ```
 **Logic:**
@@ -72,28 +72,32 @@ Strive for census balance of genders. / [Or hard quota: Min n=X <male>, Min n=Y 
 | Native American |
 | Eskimo or Aleut |
 | Hispanic / Latino | [quota note]
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | Prefer not to answer | Anchor. Mutually exclusive.
 ```
 **Variation:** Yerba Madre adds "Middle Eastern / North African" and uses "Native American, Inuit, or Aleut."
 
-### 1.4 Sensitive Industries
-**Question text:** Do you, or have you ever, worked in any of these fields or roles? Select all that apply.
-**Programming note:** Randomize. Multi-select. Terminate immediately respondents who select R1–R4.
+### 1.4 Sensitive Industries / Occupation
+**Question text:** Have you, your partner, or anyone in your immediate family ever worked in any of these industries? Select all that apply.
+**Programming note:** Do not randomize. Multi-select. Terminate immediately respondents who select any sensitive industry.
 **Response options:**
 ```
-| Advertising | Terminate.
-| Marketing | Terminate.
-| Consumer goods manufacturing | Terminate.
-| Consumer goods retailer | Terminate.
-| Health care |
-| Financial services |
-| Education |
-| Public relations |
+| Market research or advertising | Terminate.
+| [Category]-related manufacturing or distribution | Terminate.
+| [Category] service provider (e.g., landscaping, lawn maintenance) | Terminate.
+| [Category] retail | Terminate.
+| Home improvement or hardware retail |
+| Finance and/or consulting |
+| Service industry |
+| Technology |
+| Healthcare |
+| Leisure and hospitality |
+| Student |
 | None of the above | Anchor. Mutually exclusive.
 ```
+**CRITICAL:** Always include non-terminating example occupations alongside the terminating ones so respondents can see what's acceptable. Customize the terminating industries for the specific study category.
 **Variation — CCC version adds:** "Student" (assign `<student>`), "Other, please specify" (Anchor).
-**Variation — with family:** "Do you or anyone in your immediate family work in..."
+**Variation — short form:** "Do you, or have you ever, worked in any of these fields?"
 
 ### 1.5 Household Income
 **Question text:** What is your annual household income? Select one. / What is your total annual household income before taxes? Select one.
@@ -172,7 +176,7 @@ Strive for census balance of genders. / [Or hard quota: Min n=X <male>, Min n=Y 
 | Urban |
 | Suburban |
 | Rural |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 ```
 
 ### 1.12 Children in Household
@@ -199,7 +203,9 @@ Strive for census balance of genders. / [Or hard quota: Min n=X <male>, Min n=Y 
 **Logic:** Terminate immediately if respondent selects "Less than half."
 
 ### 1.14 Quality Check (Pizza Water)
-Insert as a row in at least one early grid question (typically category purchase or usage frequency):
+Insert as a row in a **screener** question (not a body question) so inattentive respondents
+are terminated before the main survey begins. Place in an early grid question such as
+category purchase or brand grid:
 ```
 | Pizza water | Terminate. | Terminate.
 ```
@@ -245,7 +251,7 @@ Assign <qualifying category> for qualifying selections.
 |  | C1: Purchased | Select all that apply. | C2: Most recently | Select one.
 | [Type A] | | | <type_a>
 | [Type B] | | | <type_b>
-| Other, please specify | Anchor. Leave a space. | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end. | Anchor. Open end.
 ```
 **Logic:** Assign `<segment>` or `<form>` based on selection. Respondents can be assigned multiple segments.
 
@@ -318,7 +324,7 @@ Assign <qualifying category> for qualifying selections.
 | [Brand A] | | [Min n=X]
 | [Brand B] | |
 | Private label / store branded | | Anchor.
-| Other, please specify | | Anchor. Leave a space.
+| Other, please specify | | Anchor. Open end.
 | None of the above | | Anchor. Mutually exclusive.
 ```
 **Logic:** Assign `<brand>` based on response in C2. Use least-fill assignment if applicable.
@@ -331,7 +337,7 @@ Assign <qualifying category> for qualifying selections.
 |  | C1: Heard of | C2: Bought P3M | C3: Buy most often | [variable/tier]
 | [Brand A] | | | | <tier_a>
 | [Brand B] | | | | <tier_b>
-| Other, please specify | | | | Anchor. Leave a space.
+| Other, please specify | | | | Anchor. Open end.
 | None of the above | | | | Anchor. Mutually exclusive.
 ```
 **Logic:** Assign `<brand>` based on C3. Assign brand tier variable. Terminate if no qualifying brands in C1.
@@ -361,7 +367,7 @@ Assign <qualifying category> for qualifying selections.
 ```
 | [Driver A] |
 | [Driver B] |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | None of the above | Anchor. Mutually exclusive.
 ```
 
@@ -387,7 +393,7 @@ Assign <qualifying category> for qualifying selections.
 | Drugstore (e.g., CVS, Walgreens) | | | <drug>
 | Specialty beauty store (e.g., Sephora, Ulta) | | | <specialty beauty>
 | Dollar store (e.g., Dollar General) | | | <dollar>
-| Other, please specify | | | Anchor. Leave a space.
+| Other, please specify | | | Anchor. Open end.
 | None of the above | | | Anchor. Mutually exclusive.
 ```
 **Logic:** Assign `<channel>` based on C2. Use least-fill for `<retailer>` assignment.
@@ -401,7 +407,7 @@ Assign <qualifying category> for qualifying selections.
 | [Retailer A] | | Min n=50
 | [Retailer B] | | Min n=50
 | Online-only stores (e.g., Amazon) | | Assign <online>
-| Other, please specify | | Anchor. Leave a space.
+| Other, please specify | | Anchor. Open end.
 ```
 **Logic:** Assign `<retailer>` based on C2. Ensure min quotas per retailer.
 
@@ -436,13 +442,14 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 
 ### 5.2 Bipolar / Slider Scale (4-Point or 5-Point)
 **Question text:** Which statement best describes you? / What best describes your attitudes towards `<category>`? Select one per pair of statements.
-**Programming note:** Program as a [4/5]-point scale with [Statement A anchored on left / arrow starting in the middle]. Single select per row. For each row in final data, label 1 with the wording of the statement on the left and label [4/5] with the wording of the statement on the right. Randomize pairs, not scale.
-**Scale:** 1 | 2 | 3 | 4 [| 5]
-**Response options:** Paired statement rows:
+**Programming note:** Program as a [4/5]-point scale with one statement anchoring each side. Single select per row. Randomize statements.
+**Table format:** Merged header (R0-R3) + C1/C2 header row + paired statement rows:
 ```
-| "[Left statement A]" | 1 — 2 — 3 — 4 [— 5] | "[Right statement A]"
-| "[Left statement B]" | 1 — 2 — 3 — 4 [— 5] | "[Right statement B]"
+R4: [blank] | C1 (RED) | C2 (RED)
+R5: [blank] | [Left statement A] (BLACK) | [Right statement A] (BLACK)
+R6: [blank] | [Left statement B] (BLACK) | [Right statement B] (BLACK)
 ```
+The programmer builds the numeric scale from the programming note. Do NOT include "1 — 2 — 3 — 4" inline text.
 **Variation — Bolton (4-pt):** No midpoint. Arrow starts in middle.
 **Variation — CCC (5-pt):** Has midpoint. Arrow starts on left or in middle depending on question.
 
@@ -483,20 +490,21 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 | Went online on my phone to research products | Only show if not assigned <online>
 | Looked for a specific [attribute] |
 | Looked at product reviews | Only show if assigned <online>
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | None of the above | Anchor. Mutually exclusive.
 ```
 
 ### 6.3 Aisle Perceptions — Bipolar Scale
 **Question text:** Which statement best describes the `<category>` section at `<retailer>`? Select one for each pair of statements.
-**Programming note:** Program as a 5-point scale with arrow starting in the middle. Label 1 with the left statement and label 5 with the right statement. Randomize rows, not columns. Single select per row.
-**Response options:**
+**Programming note:** Program as a 5-point scale with one statement anchoring each side. Randomize statements. Single select per row.
+**Table format:** C1/C2 columns:
 ```
-| Disorganized | 1 — 2 — 3 — 4 — 5 | Organized
-| Easy to find new items | 1 — 2 — 3 — 4 — 5 | Difficult to find new items
-| Fun to browse | 1 — 2 — 3 — 4 — 5 | Boring to browse
-| Has high quality brands | 1 — 2 — 3 — 4 — 5 | Has low quality brands
-| Has a variety of brands | 1 — 2 — 3 — 4 — 5 | Has a limited selection of brands
+[blank] | C1 (RED) | C2 (RED)
+[blank] | Disorganized | Organized
+[blank] | Easy to find new items | Difficult to find new items
+[blank] | Fun to browse | Boring to browse
+[blank] | Has high quality brands | Has low quality brands
+[blank] | Has a variety of brands | Has a limited selection of brands
 ```
 
 ### 6.4 Shopping Difficulty / Ease
@@ -613,7 +621,7 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 |  | C1: Typically | Select up to [3]. | C2: Most often | Select one.
 | [Occasion A] | |
 | [Occasion B] | |
-| Other, please specify | Anchor. Leave a space. | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end. | Anchor. Open end.
 ```
 **Logic:** Assign `<occasion>` based on C2.
 
@@ -653,7 +661,7 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 | In the car / commuting |
 | At a gym / sports facility |
 | At a restaurant / cafe |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 ```
 
 ### 8.5 Who With
@@ -666,7 +674,7 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 | With friends |
 | With coworkers |
 | With a significant other / partner |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 ```
 
 ### 8.6 Cross-Usage
@@ -811,7 +819,7 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 | A different product from the same brand |
 | A different size of the same product |
 | Nothing — I would have left without purchasing |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 ```
 
 ### 10.7 Past Changes — Multi-Select
@@ -858,7 +866,7 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 | Prefer the ease of other types |
 | Not sure how to properly [use / prepare] it |
 | Don't think it's different from other types |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | Just haven't thought about it | Anchor. Mutually exclusive.
 ```
 
@@ -871,7 +879,7 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 | More affordable options |
 | [Study-specific enabler] |
 | Recommendations from family / friends |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 ```
 **Logic:** Terminate all remaining unqualified respondents after this question.
 
@@ -891,7 +899,7 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 | In-store (e.g., shelf displays, associates) |
 | Magazines / blogs / websites |
 | TV / streaming ads |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 | None of the above | Anchor. Mutually exclusive.
 ```
 
@@ -907,7 +915,7 @@ Strongly disagree | Somewhat disagree | Neither agree nor disagree | Somewhat ag
 | Pinterest |
 | Reddit |
 | X / Twitter |
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 ```
 
 ### 13.3 Research Behavior
@@ -992,7 +1000,7 @@ Create hidden variable <Enthusiast> if respondent satisfies [composite criteria 
 |  | C1: Currently own | C2: Use most often
 | [Appliance A] | |
 | [Appliance B] | |
-| Other, please specify | Anchor. Leave a space. | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end. | Anchor. Open end.
 | None of the above | Anchor. Mutually exclusive. | Anchor. Mutually exclusive.
 ```
 
@@ -1008,7 +1016,7 @@ Create hidden variable <Enthusiast> if respondent satisfies [composite criteria 
 ```
 | [Type A] | <type_a>
 | [Type B] | <type_b>
-| Other, please specify | Anchor. Leave a space.
+| Other, please specify | Anchor. Open end.
 ```
 **Logic:** Create hidden variable `<product type>` based on response.
 
