@@ -86,11 +86,13 @@ echo 3. Save the output to the user's Downloads folder >> "%USERPROFILE%\Seurat 
 echo. >> "%USERPROFILE%\Seurat Survey Builder\CLAUDE.md"
 echo If the user drags in a file or pastes a path, immediately begin the conversion. >> "%USERPROFILE%\Seurat Survey Builder\CLAUDE.md"
 
-:: Create the desktop shortcut launcher
+:: Create the desktop shortcut launcher (with auto-sync)
 (
 echo @echo off
 echo title Seurat Survey Builder
 echo color 0F
+echo :: Auto-sync plugin from git before launching
+echo call "%REPO%\setup\sync-plugin.bat" 2^>nul
 echo cd /d "%%USERPROFILE%%\Seurat Survey Builder"
 echo echo.
 echo echo   =============================================

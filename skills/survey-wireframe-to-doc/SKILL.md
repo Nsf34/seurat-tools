@@ -309,6 +309,33 @@ Assign question numbers before writing:
 - **Demographics/Profiling**: D1, D2, D3...
 - **Messages**: M1, M2, M3... (independent numbering)
 
+### Step 2b: Pull context from Seurat Brain (if available)
+
+Before writing the build script, check if the Seurat Brain v2 is accessible. The brain lives at:
+`~/Dropbox (Personal)/Nick's Personal Dropbox (Nickfisher518@gmail.com)/seurat-brain-v2/`
+
+If accessible, read these files for context that improves the output:
+
+1. **`knowledge/survey-patterns.md`** — The firm's modular survey question library organized by
+   survey archetype (A&U, Segmentation, Innovation, Shopper Journey, Demand Map). Match the
+   wireframe's structure to the closest archetype(s) and use those patterns to inform question
+   design, funnel logic, and piping conventions.
+
+2. **`clients/[client].md`** — If the wireframe names a specific client, read their profile for
+   category context, past project history, and any relevant patterns. This helps customize
+   response options (e.g., category-specific brand lists, channel lists, retailer lists).
+
+3. **`knowledge/processes/quant-research.md`** — The firm's quant research process. Useful for
+   understanding how the survey doc fits into the larger workflow.
+
+**Important:** The brain provides CONTEXT, not formatting. The skill's own reference files
+(`question-bank.md`, `formatting-standards.md`, etc.) remain the source of truth for all
+formatting, table structure, and programming note conventions. Brain content informs WHAT
+to ask and how to customize it for the specific client/category.
+
+If the brain is not accessible (path doesn't exist), proceed without it — the skill's
+built-in references are sufficient for a complete survey document.
+
 ### Step 3: Write the build script
 
 Create a Python script that calls the builder for every question. The script is the
@@ -317,11 +344,12 @@ at any time.
 
 For every wireframe row:
 1. **Match the topic to the question bank** — find the closest pattern
-2. **Use the bank's template** for question text, programming note, and response options
-3. **Customize with study-specific content** from the wireframe
-4. **Expand abbreviated lists** — if wireframe says "Etc." or "(e.g., ...)", use the
+2. **Cross-reference brain survey patterns** (if available) for archetype-specific conventions
+3. **Use the bank's template** for question text, programming note, and response options
+4. **Customize with study-specific content** from the wireframe and brain client profile
+5. **Expand abbreviated lists** — if wireframe says "Etc." or "(e.g., ...)", use the
    standard response set from the question bank
-5. **Generate logic notes** from the objective column
+6. **Generate logic notes** from the objective column
 
 ### Step 4: Key rules (apply to EVERY question)
 
